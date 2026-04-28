@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: 20px auto;">
+    <h1>Publicar Nueva Receta</h1>
+
+    <form action="{{ url_for('nueva_receta') }}" method="POST" enctype="multipart/form-data">
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Título de la Receta</label>
+            <input type="text" name="titulo" required placeholder="Ej: Tortilla de Patatas"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Descripción General</label>
+            <textarea name="descripcion" rows="3" placeholder="Cuéntanos un poco sobre esta receta..."
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Imagen de la receta</label>
+            <input type="file" name="imagen" accept="image/*"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <div style="margin-bottom: 20px;">
+            <h3>Ingredientes</h3>
+            <div id="contenedor-ingredientes">
+                <div class="ingrediente-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" name="ingrediente_nombre[]" placeholder="Nombre (ej. Harina)"
+                            style="flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                    <input type="text" name="ingrediente_cantidad[]" placeholder="Cantidad (ej. 500g)"
+                            style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+            </div>
+
+            <button type="button" onclick="agregarIngrediente()"
+                    style="background: #eee; border: 1px solid #ccc; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px;">
+                + Añadir otro ingrediente
+            </button>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <h3>Pasos de Preparación</h3>
+            <div id="contenedor-pasos">
+                <div class="paso-row" style="margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;">
+                    <span style="font-weight: bold; padding-top: 8px;">1.</span>
+                    <textarea name="paso_descripcion[]" placeholder="Describe el primer paso..."
+                                style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+                </div>
+            </div>
+
+            <button type="button" onclick="agregarPaso()"
+                    style="background: #eee; border: 1px solid #ccc; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px;">
+                + Añadir siguiente paso
+            </button>
+        </div>
+
+        <button type="submit"
+                style="width: 100%; padding: 14px; background-color: #111; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold;">
+            Publicar Receta
+        </button>
+    </form>
+</div>
+
+<script>
+    function agregarIngrediente() {
+        const contenedor = document.getElementById('contenedor-ingredientes');
+        const nuevoDiv = document.createElement('div');
+        nuevoDiv.className = 'ingrediente-row';
+        nuevoDiv.style = 'display: flex; gap: 10px; margin-bottom: 10px;';
+        nuevoDiv.innerHTML = `
+            <input type="text" name="ingrediente_nombre[]" placeholder="Nombre"
+                    style="flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+            <input type="text" name="ingrediente_cantidad[]" placeholder="Cantidad"
+                    style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+        `;
+        contenedor.appendChild(nuevoDiv);
+    }
+
+    let pasoContador = 1;
+
+    function agregarPaso() {
+        pasoContador++;
+        const contenedor = document.getElementById('contenedor-pasos');
+        const nuevoDiv = document.createElement('div');
+        nuevoDiv.className = 'paso-row';
+        nuevoDiv.style = 'margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;';
+        nuevoDiv.innerHTML = `
+            <span style="font-weight: bold; padding-top: 8px;">${pasoContador}.</span>
+            <textarea name="paso_descripcion[]" placeholder="Describe el paso..."
+                        style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+        `;
+        contenedor.appendChild(nuevoDiv);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recetas Flask</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- MENÚ PRINCIPAL -->
+    <nav>
+        <a href="/">Inicio</a>
+        <a href="{{ url_for('nueva_receta') }}">Crear Receta</a>
+        <a href="{{ url_for('recetas') }}">Ver Recetas</a>
+        <a href="{{ url_for('menus') }}">Menús del Día</a>
+        <a href="{{ url_for('videos') }}">Vídeos</a>
+        <a href="{{ url_for('quienes_somos') }}">Quiénes Somos</a>
+        <a href="{{ url_for('contacto') }}">Contacto</a>
+
+    </nav>
+
+    <hr>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Info de sesión -->
+    {% if session.get("usuario_id") %}
+        <p>Hola, {{ session.get("usuario_nombre") }}</p>
+        <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+    {% endif %}
+</body>
+</html>
