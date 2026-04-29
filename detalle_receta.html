@@ -1,0 +1,80 @@
+{% extends 'base.html' %} 
+{% block content %}
+
+<div class="card">
+
+    <!-- Titulo de la receta -->
+    <h1>{{ receta.titulo }}</h1>
+
+    <!-- Autor de la receta -->
+    <p>Autor: {{ receta.autor }}</p>
+
+    <!-- Mostrar imagen si existe -->
+    {% if receta.imagen %}
+        <div style="text-align: center; margin: 20px 0;">
+            <!-- Imagen cargada desde la carpeta static/uploads -->
+            <img src="{{ url_for('static', filename='uploads/' ~ receta.imagen) }}"
+                style="max-width: 450px; width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px;">
+        </div>
+    {% else %}
+        <!-- Imagen por default si no hay imagen -->
+        <div style="width: 450px; max-width: 100%; height: 260px; background: #444; border-radius: 12px; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 4rem;">🍽️</span>
+        </div>
+    {% endif %}
+    
+    <!-- Descripción de la receta -->
+    <p>{{ receta.descripcion }}</p>
+
+    <!-- Lista de ingredientes -->
+    <h3>Ingredientes</h3>
+    <ul>
+        {% for ing in ingredientes %}
+            <li>{{ ing.cantidad }} de {{ ing.nombre }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Lista de pasos -->
+    <h3>Pasos a seguir</h3>
+    <ol>
+        {% for paso in pasos %}         
+            <li>{{ paso.descripcion }}</li>
+        {% endfor %}
+    </ol>
+
+    <hr>
+
+    <!-- Sección de comentarios -->
+    <h3>Comentarios</h3>
+
+    <!-- Formulario para añadir un nuevo comentario -->
+    <form action="{{ url_for('añadir_comentario', receta_id=receta.id) }}" method="POST">
+        <textarea name="contenido" placeholder="Escribe tu opinión..." required></textarea>
+        <button type="submit">Publicar Comentario</button>
+    </form>
+
+<!-- Lista de comentarios -->
+<div class="comentarios">
+    {% for com in comentarios %}
+        <div class="comentario-box">
+            <!-- Nombre del usuario y comentario -->
+            <strong>{{ com.nombre }}</strong>: {{ com.contenido }}
+            
+            <!-- Fecha de creación del comentario -->
+            <small>({{ com.creado_en }})</small>
+
+            <!-- Botón para eliminar comentario: solo visible para administradores y propietarios -->
+            {% if session.get("usuario_rol") == "admin" or session.get("usuario_id") == com.usuario_id %}
+                <form action="{{ url_for('eliminar_comentario', comentario_id=com.id, receta_id=receta.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" onclick="return confirm('¿Seguro que quieres eliminar este comentario?');">
+                        Eliminar
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+</div>
+
+{% endblock %}

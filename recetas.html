@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+
+    <!-- Título -->
+    <h1>Libro de Recetas</h1>
+
+    <!-- recetas -->
+    <div style="display: grid; gap: 20px;">
+
+        {% for receta in recetas %}
+            <!-- Tarjeta individual de receta -->
+            <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; position: relative; overflow: hidden;">
+
+                <!-- Imagen de la receta -->
+                {% if receta.imagen %}
+                    <!-- Imagen real -->
+                    <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}"
+                            style="width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+                {% else %}
+                    <!-- Imagen por defecto si no hay -->
+                    <div style="height: 160px; background: #444; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 3rem;">🍽️</span>
+                    </div>
+                {% endif %}
+
+                <!-- Título receta -->
+                <h3>{{ receta.titulo }}</h3>
+
+                <!-- Descripción recortada a 100 caracteres -->
+                <p>{{ receta.descripcion[:100] }}...</p>
+
+                <!-- Enlace a la página de detalle -->
+                <a href="{{ url_for('detalle_receta', id=receta.id) }}"
+                    style="color: #ff9800; font-weight: bold;">
+                    Ver detalles y comentarios
+                </a>
+
+                <!-- Botones de editar y eliminar -->
+                <!-- Solo visibles si el usuario es el creador o es admin -->
+                {% if receta.usuario_id == session['usuario_id'] or session.get('usuario_rol') == 'admin' %}
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+
+                    <!-- Botón editar -->
+                    <a href="{{ url_for('editar_receta', receta_id=receta.id) }}"
+                        style="background-color: #4a90d9; color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; text-decoration: none;">
+                        ✏️ Editar
+                    </a>
+
+                    <!-- Formulario para eliminar receta -->
+                    <form method="POST" action="{{ url_for('eliminar_receta', receta_id=receta.id) }}"
+                            onsubmit="return confirm('¿Seguro que quieres eliminar esta receta?');"
+                            style="margin: 0;">
+
+                        <!-- Botón eliminar -->
+                        <button type="submit"
+                                style="background-color: #e05252; color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; cursor: pointer;">
+                            🗑️ Eliminar
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+            </div>
+
+        {% else %}
+            <!-- Mensaje si no hay recetas -->
+            <p>No hay recetas todavía.</p>
+        {% endfor %}
+
+    </div>
+</div>
+{% endblock %}

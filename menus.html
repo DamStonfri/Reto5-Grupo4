@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+
+    <!-- Cabecera con título y botón de crear menú -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h1>Menús del Día</h1>
+
+        <!-- Solo visible para administradores -->
+        {% if session.get('usuario_rol') == 'admin' %}
+            <!-- Botón para crear un nuevo menú -->
+            <a href="{{ url_for('nuevo_menu') }}"
+                style="background: #ff9800; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                + Crear menú
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Contenedor de todos los menús -->
+    <div style="display: grid; gap: 25px;">
+
+        {% for menu in menus %}
+            <!-- Tarjeta de cada menú -->
+            <div style="border: 1px solid #ddd; border-radius: 12px; padding: 20px; background: white;">
+
+                <!-- Nombre del menú -->
+                <h2 style="margin-top: 0; color: #ff9800;">{{ menu.nombre }}</h2>
+
+                <!-- Información del menú -->
+                <p><strong>Día:</strong> {{ menu.dia_semana }}</p>
+                <p><strong>Creado por:</strong> {{ menu.autor }}</p>
+
+                <!-- Botón para eliminar menú (solo admin) -->
+                {% if session.get('usuario_rol') == 'admin' %}
+                <form method="POST"
+                        action="{{ url_for('eliminar_menu', menu_id=menu.id) }}"
+                        onsubmit="return confirm('¿Seguro que quieres eliminar este menú?');"
+                        style="margin: 10px 0;">
+
+                    <!-- Botón de eliminar -->
+                    <button type="submit"
+                            style="background: #e05252; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                            Eliminar menú
+                    </button>
+
+                </form>
+                {% endif %}
+
+                <!-- Sección de recetas dentro del menú -->
+                <h3>Recetas del menú</h3>
+
+                {% if menu.recetas %}
+                    <!-- Grid de recetas -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+
+                        {% for receta in menu.recetas %}
+                            <!-- Tarjeta individual de receta -->
+                            <div style="border: 1px solid #eee; border-radius: 10px; overflow: hidden; background: #fafafa;">
+
+                                <!-- Imagen de la receta -->
+                                {% if receta.imagen %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ receta.imagen) }}"
+                                            style="width: 100%; height: 140px; object-fit: cover;">
+                                {% else %}
+                                    <!-- Imagen por defecto -->
+                                    <div style="height: 140px; background: #444; display: flex; align-items: center; justify-content: center;">
+                                        <span style="font-size: 2.5rem;">🍽️</span>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Información de la receta -->
+                                <div style="padding: 12px;">
+                                    <h4 style="margin: 0 0 6px;">{{ receta.titulo }}</h4>
+
+                                    <!-- Autor -->
+                                    <p style="margin: 0 0 8px; color: #777; font-size: 0.9rem;">
+                                        por {{ receta.autor }}
+                                    </p>
+
+                                    <!-- Enlace al detalle -->
+                                    <a href="{{ url_for('detalle_receta', id=receta.id) }}"
+                                        style="color: #ff9800; font-weight: bold; text-decoration: none;">
+                                        Ver receta »
+                                    </a>
+                                </div>
+
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                {% else %}
+                    <!-- Mensaje si no hay recetas -->
+                    <p>Este menú no tiene recetas.</p>
+                {% endif %}
+
+            </div>
+
+        {% else %}
+            <!-- Mensaje si no hay menús -->
+            <p>No hay menús creados todavía.</p>
+        {% endfor %}
+
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recetas Flask</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- MENÚ PRINCIPAL -->
+    <nav class="navbar">
+    <div class="nav-links">
+        <a href="/">Inicio</a>
+        <a href="{{ url_for('nueva_receta') }}">Crear Receta</a>
+        <a href="{{ url_for('recetas') }}">Ver Recetas</a>
+        <a href="{{ url_for('menus') }}">Menús del Día</a>
+        <a href="{{ url_for('videos') }}">Vídeos</a>
+        <a href="{{ url_for('quienes_somos') }}">Quiénes Somos</a>
+        <a href="{{ url_for('contacto') }}">Contacto</a>
+    </div>
+    <!--toggleUserMenu ayudado con ia-->
+    {% if session.get("usuario_id") %}
+        <div class="user-menu">
+            <button class="user-logo" onclick="toggleUserMenu()">
+                {{ session.get("usuario_nombre")[0]|upper }}
+            </button>
+
+            <div class="user-dropdown" id="userDropdown">
+                <p>Hola, <strong>{{ session.get("usuario_nombre") }}</strong></p>
+
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    Cerrar sesión
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</nav>
+
+    <hr>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Info de sesión -->
+    {% if session.get("usuario_id") %}
+        <p>Hola, {{ session.get("usuario_nombre") }}</p>
+    {% endif %}
+    <!-- script ayudado ia logo perfil -->
+    <script>
+    function toggleUserMenu() {
+        const menu = document.getElementById("userDropdown");
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: 20px auto;">
+    <h1>Editar Receta</h1>
+
+    <!-- Formulario que envía los cambios a editar_receta -->
+    <form action="{{ url_for('editar_receta', receta_id=receta.id) }}" method="POST" enctype="multipart/form-data">
+
+        <!-- Titulo de la receta -->
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Título de la Receta</label>
+            <!-- Se rellena automáticamente con el título actual -->
+            <input type="text" name="titulo" required value="{{ receta.titulo }}"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+        </div>
+
+        <!-- Descripción -->
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Descripción General</label>
+            <!-- Muestra la descripción actual -->
+            <textarea name="descripcion" rows="3"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">{{ receta.descripcion }}</textarea>
+        </div>
+
+        <!-- Imagen -->
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Imagen de la receta</label>
+
+            <!-- Si ya existe una imagen, se muestra -->
+            {% if receta.imagen %}
+                <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}"
+                        style="width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+            {% endif %}
+
+            <!-- Input para subir nueva imagen -->
+            <input type="file" name="imagen" accept="image/*"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+
+            <!-- Aviso al usuario -->
+            <p style="color: #888; font-size: 0.85rem;">Si no eliges una nueva imagen, se mantendrá la actual.</p>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <!-- Sección de ingredientes -->
+        <div style="margin-bottom: 20px;">
+            <h3>Ingredientes</h3>
+
+            <div id="contenedor-ingredientes">
+
+                <!-- Si hay ingredientes, se cargan (ayudado ia) -->
+                {% for ing in ingredientes %}
+                <div class="ingrediente-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <!-- Nombre del ingrediente -->
+                    <input type="text" name="ingrediente_nombre[]" value="{{ ing.nombre }}"
+                            placeholder="Nombre (ej. Harina)"
+                            style="flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                    
+                    <!-- Cantidad -->
+                    <input type="text" name="ingrediente_cantidad[]" value="{{ ing.cantidad }}"
+                            placeholder="Cantidad (ej. 500g)"
+                            style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+
+                {% else %}
+                <!-- Si no hay ingredientes, se muestra uno vacío -->
+                <div class="ingrediente-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" name="ingrediente_nombre[]" placeholder="Nombre (ej. Harina)"
+                            style="flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                    <input type="text" name="ingrediente_cantidad[]" placeholder="Cantidad (ej. 500g)"
+                            style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botón para añadir más ingredientes dinámicamente -->
+            <button type="button" onclick="agregarIngrediente()"
+                    style="background: #eee; border: 1px solid #ccc; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px;">
+                + Añadir otro ingrediente
+            </button>
+        </div>
+
+        <!-- Sección de pasos (lo mismo que lo de ingredientes pero sin ayuda ia)-->
+        <div style="margin-bottom: 30px;">
+            <h3>Pasos de Preparación</h3>
+
+            <div id="contenedor-pasos">
+
+                <!-- Si hay pasos, se cargan -->
+                {% for paso in pasos %}
+                <div class="paso-row" style="margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;">
+                    <!-- Número del paso -->
+                    <span style="font-weight: bold; padding-top: 8px;">{{ paso.numero_paso }}.</span>
+
+                    <!-- Descripción -->
+                    <textarea name="paso_descripcion[]"
+                                style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">{{ paso.descripcion }}</textarea>
+                </div>
+
+                {% else %}
+                <!-- Paso inicial si no hay ninguno -->
+                <div class="paso-row" style="margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;">
+                    <span style="font-weight: bold; padding-top: 8px;">1.</span>
+                    <textarea name="paso_descripcion[]" placeholder="Describe el primer paso..."
+                                style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botón para añadir más pasos -->
+            <button type="button" onclick="agregarPaso()"
+                    style="background: #eee; border: 1px solid #ccc; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 13px;">
+                + Añadir siguiente paso
+            </button>
+        </div>
+
+        <!-- Botones finales -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- Guardar cambios -->
+            <button type="submit"
+                    style="flex: 1; padding: 14px; background-color: #111; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                    Guardar cambios
+            </button>
+
+            <!-- Cancelar -->
+            <a href="{{ url_for('recetas') }}"
+                style="color: #888; text-decoration: none; font-size: 0.95rem;">Cancelar</a>
+        </div>12.0 <!-- ⚠️ Esto parece un error o texto sobrante -->
+    </form>
+</div>
+
+
+<!-- Script para añadir ingredientes y pasos dinámicamente (ayudado ia) -->
+<script>
+    // Contador inicial de pasos (usa los existentes o empieza en 1)
+    let pasoContador = {{ pasos|length if pasos else 1 }};
+
+    // Función para añadir ingrediente
+    function agregarIngrediente() {
+        const contenedor = document.getElementById('contenedor-ingredientes');
+
+        const nuevoDiv = document.createElement('div');
+        nuevoDiv.className = 'ingrediente-row';
+        nuevoDiv.style = 'display: flex; gap: 10px; margin-bottom: 10px;';
+
+        nuevoDiv.innerHTML = `
+            <input type="text" name="ingrediente_nombre[]" placeholder="Nombre"
+                    style="flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+            <input type="text" name="ingrediente_cantidad[]" placeholder="Cantidad"
+                    style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+        `;
+
+        contenedor.appendChild(nuevoDiv);
+    }
+
+    // Función para añadir paso
+    function agregarPaso() {
+        pasoContador++;
+
+        const contenedor = document.getElementById('contenedor-pasos');
+
+        const nuevoDiv = document.createElement('div');
+        nuevoDiv.className = 'paso-row';
+        nuevoDiv.style = 'margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start;';
+
+        nuevoDiv.innerHTML = `
+            <span style="font-weight: bold; padding-top: 8px;">${pasoContador}.</span>
+            <textarea name="paso_descripcion[]" placeholder="Describe el paso..."
+                        style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+        `;
+
+        contenedor.appendChild(nuevoDiv);
+    }
+</script>
+
+{% endblock %}
