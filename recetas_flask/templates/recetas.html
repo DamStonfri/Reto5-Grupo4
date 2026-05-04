@@ -1,51 +1,54 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="card">
-    <h1>Libro de Recetas</h1>
+<div class="page-wrapper">
+    <!-- Cabecera con filtro de categoria -->
+    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <h1 class="page-title">Libro de Recetas</h1>
 
-    <div style="display: grid; gap: 20px;">
+        <form method="GET" action="{{ url_for('recetas') }}" style="display:flex; gap:8px; align-items:center;">
+            <select name="categoria" style="padding:8px 14px; border-radius:8px; border:1.5px solid #ccc; font-size:14px; background:#fff;">
+                <option value="todas"   {% if not filtro_activo or filtro_activo == 'todas' %}selected{% endif %}>Todas las recetas</option>
+                <option value="vegana"  {% if filtro_activo == 'vegana' %}selected{% endif %}>Recetas veganas</option>
+                <option value="fitness" {% if filtro_activo == 'fitness' %}selected{% endif %}>Recetas fitness</option>
+            </select>
+            <button type="submit" class="btn btn-dark">Filtrar</button>
+        </form>
+    </div>
+
+    <div class="recipes-grid">
         {% for receta in recetas %}
-            <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; position: relative; overflow: hidden;">
-
+        <div class="recipe-card">
+            <div class="recipe-card__img">
                 {% if receta.imagen %}
-                    <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}"
-                            style="width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+                    <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}" alt="{{ receta.titulo }}">
                 {% else %}
-                    <div style="height: 160px; background: #444; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;">
-                        <span style="font-size: 3rem;">🍽️</span>
-                    </div>
+                    <span class="placeholder-icon">🍽️</span>
                 {% endif %}
+            </div>
+            <div class="recipe-card__body">
+                <div class="recipe-card__tag">Receta</div>
+                <h3 class="recipe-card__title">{{ receta.titulo }}</h3>
+                <hr class="recipe-card__divider">
+                <p class="recipe-card__desc">{{ receta.descripcion[:100] }}...</p>
+                <a href="{{ url_for('detalle_receta', id=receta.id) }}" class="recipe-card__link">Ver detalles y comentarios</a>
 
-                <h3>{{ receta.titulo }}</h3>
-                <p>{{ receta.descripcion[:100] }}...</p>
-
-                <a href="{{ url_for('detalle_receta', id=receta.id) }}"
-                    style="color: #ff9800; font-weight: bold;">
-                    Ver detalles y comentarios
-                </a>
-
+                <!-- Botones de edicion/borrado solo para el autor o admin -->
                 {% if receta.usuario_id == session['usuario_id'] or session.get('usuario_rol') == 'admin' %}
-                <div style="margin-top: 15px; display: flex; gap: 8px;">
-                    <a href="{{ url_for('editar_receta', receta_id=receta.id) }}"
-                        style="background-color: #4a90d9; color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; text-decoration: none;">
-                        ✏️ Editar
-                    </a>
-
+                <div class="recipe-card__actions">
+                    <a href="{{ url_for('editar_receta', receta_id=receta.id) }}" class="btn btn-edit btn-sm">Editar</a>
                     <form method="POST" action="{{ url_for('eliminar_receta', receta_id=receta.id) }}"
-                            onsubmit="return confirm('¿Seguro que quieres eliminar esta receta?');"
-                            style="margin: 0;">
-                        <button type="submit"
-                                style="background-color: #e05252; color: white; border: none; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; cursor: pointer;">
-                            🗑️ Eliminar
-                        </button>
+                            onsubmit="return confirm('Seguro que quieres eliminar esta receta?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
                     </form>
                 </div>
                 {% endif %}
-
             </div>
+        </div>
         {% else %}
-            <p>No hay recetas todavía.</p>
+        <div class="empty-state">
+            <p>No hay recetas para este filtro.</p>
+        </div>
         {% endfor %}
     </div>
 </div>
