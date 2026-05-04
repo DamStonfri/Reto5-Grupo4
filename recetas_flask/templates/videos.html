@@ -1,104 +1,31 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div style="max-width: 1100px; margin: 40px auto; padding: 20px;">
-
-    <h1 style="text-align: center; font-size: 2.2rem;">Vídeos de Recetas 🇪🇸🎥</h1>
-
-    <p style="text-align: center; color: #666; margin-bottom: 35px;">
-        Aprende recetas españolas paso a paso
-    </p>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
-
-        <!-- 1 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/YMmFrFdO7RM"
-                allowfullscreen></iframe>
-            <h3>Tortilla de patatas</h3>
-        </div>
-
-        <!-- 2 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/vWySIREExjo"
-                allowfullscreen></iframe>
-            <h3>Paella valenciana</h3>
-        </div>
-
-        <!-- 3 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/ktv5vseGTSY"
-                allowfullscreen></iframe>
-            <h3>Croquetas caseras</h3>
-        </div>
-
-        <!-- 4 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/4aZr5hZXP_s"
-                allowfullscreen></iframe>
-            <h3>Pollo Teriyaki</h3>
-        </div>
-
-        <!-- 5 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/NvhuoE8ENGQ"
-                allowfullscreen></iframe>
-            <h3>Fabada asturiana</h3>
-        </div>
-
-        <!-- 6 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/wuRX0xNDEyc"
-                allowfullscreen></iframe>
-            <h3>Pollo al ajillo</h3>
-        </div>
-
-        <!-- 7 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/rpRP8x1gGS0"
-                allowfullscreen></iframe>
-            <h3>Lentejas caseras</h3>
-        </div>
-
-        <!-- 8 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/kUdMTKC5jWo"
-                allowfullscreen></iframe>
-            <h3>Churros caseros</h3>
-        </div>
-
-        <!-- 9 -->
-        <div class="card-video">
-            <iframe width="100%" height="220"
-                src="https://www.youtube.com/embed/SX_p34jG_ww"
-                allowfullscreen></iframe>
-            <h3>Flan de huevo</h3>
-        </div>
-
+<div class="page-wrapper">
+    <div class="page-header" style="flex-direction:column; align-items:flex-start; gap:4px;">
+        <h1 class="page-title">Videos de Recetas</h1>
+        <p style="color:var(--ink-light); margin-left:18px;">Aprende recetas espanolas paso a paso</p>
     </div>
 
+    <!--  videos de YouTube -->
+    <div class="videos-grid">
+        {% set videos = [
+            ("YMmFrFdO7RM", "Tortilla de patatas"),
+            ("vWySIREExjo", "Paella valenciana"),
+            ("ktv5vseGTSY", "Croquetas caseras"),
+            ("4aZr5hZXP_s", "Pollo Teriyaki"),
+            ("NvhuoE8ENGQ", "Fabada asturiana"),
+            ("wuRX0xNDEyc", "Pollo al ajillo"),
+            ("rpRP8x1gGS0", "Lentejas caseras"),
+            ("kUdMTKC5jWo", "Churros caseros"),
+            ("SX_p34jG_ww", "Flan de huevo")
+        ] %}
+        {% for video_id, titulo in videos %}
+        <div class="video-card">
+            <iframe height="220" src="https://www.youtube.com/embed/{{ video_id }}" allowfullscreen></iframe>
+            <h3 class="video-card__title">{{ titulo }}</h3>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-
-<style>
-.card-video {
-    background: white;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.card-video h3 {
-    margin-top: 10px;
-}
-</style>
-
 {% endblock %}
