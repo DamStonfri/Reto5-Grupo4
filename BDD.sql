@@ -64,3 +64,9 @@ CREATE TABLE menu_recetas (
 ALTER TABLE recetas ADD COLUMN imagen VARCHAR(255) DEFAULT NULL;
 
 CREATE USER "aimar"@"%" identified by "1234ai";
+
+ALTER TABLE recetas ADD COLUMN imagen VARCHAR(255) DEFAULT NULL;
+
+ALTER TABLE ingredientes 
+ADD COLUMN categoria ENUM('proteina', 'vegetal', 'carbohidrato', 'otro') 
+DEFAULT 'otro';
