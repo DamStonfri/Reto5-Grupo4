@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Mi Perfil</h1>
+        <a href="{{ url_for('editar_perfil') }}" class="btn btn-dark">Editar Perfil</a>
+    </div>
+
+    <h2>Mis Recetas</h2>
+    <div class="recipes-grid">
+        {% for receta in recetas %}
+        <div class="recipe-card">
+            <div class="recipe-card__img">
+                {% if receta.imagen %}
+                    <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}" alt="{{ receta.titulo }}">
+                {% else %}
+                    <span class="placeholder-icon">🍽️</span>
+                {% endif %}
+            </div>
+            <div class="recipe-card__body">
+                <h3 class="recipe-card__title">{{ receta.titulo }}</h3>
+                <p class="recipe-card__desc">{{ receta.descripcion[:100] }}...</p>
+                <div class="recipe-card__actions">
+                    <a href="{{ url_for('detalle_receta', id=receta.id) }}" class="btn btn-sm">Ver</a>
+                    <a href="{{ url_for('editar_receta', receta_id=receta.id) }}" class="btn btn-edit btn-sm">Editar</a>
+                    <form method="POST" action="{{ url_for('eliminar_receta', receta_id=receta.id) }}"
+                          onsubmit="return confirm('Seguro que quieres eliminar esta receta?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>Aún no has creado ninguna receta.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
