@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-wrapper--narrow">
+    <div class="card">
+        <h1 class="page-title" style="margin-bottom: 28px;">Publicar Nueva Receta</h1>
+
+        <form action="{{ url_for('nueva_receta') }}" method="POST" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label class="form-label">Titulo de la Receta</label>
+                <input class="form-control" type="text" name="titulo" required placeholder="Ej: Tortilla de Patatas">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descripcion General</label>
+                <textarea class="form-control" name="descripcion" rows="3" placeholder="Cuentanos un poco sobre esta receta..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Imagen de la receta</label>
+                <input class="form-control" type="file" name="imagen" accept="image/*">
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Seccion de ingredientes dinamicos -->
+            <h3 class="form-section-title">Ingredientes</h3>
+            <div id="contenedor-ingredientes">
+                <div class="dynamic-row" style="align-items:center; gap:8px;">
+                    <input class="form-control" type="text" name="ingrediente_nombre[]"
+                           placeholder="Nombre (ej. Harina)" style="flex:2"
+                           oninput="detectarCategoria(this)">
+                    <input class="form-control" type="text" name="ingrediente_cantidad[]"
+                           placeholder="Cantidad (ej. 500g)" style="flex:1">
+                    <!-- Campo oculto con la categoria detectada automaticamente -->
+                    <input type="hidden" name="ingrediente_categoria[]" value="otro">
+                    <span class="categoria-badge badge-otro">Otro</span>
+                </div>
+            </div>
+            <button type="button" class="btn-add" onclick="agregarIngrediente()">+ Anadir ingrediente</button>
+
+            <hr class="form-divider">
+
+            <!-- Seccion de pasos dinamicos -->
+            <h3 class="form-section-title">Pasos de Preparacion</h3>
+            <div id="contenedor-pasos">
+                <div class="dynamic-row">
+                    <span class="step-num">1.</span>
+                    <textarea class="form-control" name="paso_descripcion[]" placeholder="Describe el primer paso..."></textarea>
+                </div>
+            </div>
+            <button type="button" class="btn-add" onclick="agregarPaso()">+ Anadir paso</button>
+
+            <hr class="form-divider">
+
+            <button type="submit" class="btn btn-dark btn-full">Publicar Receta</button>
+        </form>
+    </div>
+</div>
+
+<!-- Estilos de los badges de categoria -->
+<style>
+.categoria-badge {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+    white-space: nowrap; flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+}
+.badge-proteina     { background: #FAECE7; color: #993C1D; }
+.badge-vegetal      { background: #EAF3DE; color: #3B6D11; }
+.badge-carbohidrato { background: #E6F1FB; color: #185FA5; }
+.badge-otro         { background: #f0efea; color: #888; }
+</style>
+
+<script>
+// Diccionario de palabras clave por categoria (todo el script ayudado IA)
+const CATEGORIAS = {
+    proteina: [
+        "pollo","pechuga","ternera","cerdo","cordero","salmon","atun","merluza",
+        "bacalao","gambas","langostinos","huevo","huevos","tofu","tempeh","lentejas",
+        "garbanzos","alubias","judias","frijoles","seitan","queso","requesón",
+        "clara","claras","jamon","chorizo","anchoas","sardinas","caballa","lubina",
+        "dorada","rape","calamar","pulpo","mejillones","almejas","carne","filete",
+        "lomo","costilla","hamburguesa","pavo","pato","conejo","bonito"
+    ],
+    vegetal: [
+        "tomate","cebolla","ajo","zanahoria","espinacas","lechuga","pimiento",
+        "pepino","calabacin","berenjena","brocoli","coliflor","col","repollo",
+        "acelgas","rucula","canonigos","champinon","seta","nabo","remolacha",
+        "apio","puerro","esparrago","esparragos","alcachofa","judia verde",
+        "guisante","aguacate","kale","hinojo","perejil","cilantro","albahaca",
+        "menta","romero","tomillo","oregano","laurel","eneldo","cebollino",
+        "coles de bruselas","maiz"
+    ],
+    carbohidrato: [
+        "arroz","pasta","macarrones","espaguetis","fideos","pan","baguette",
+        "harina","avena","quinoa","cuscus","bulgur","patata","patatas","boniato",
+        "polenta","mijo","trigo","centeno","espelta","cebada","galletas","cereales",
+        "granola","tostada","noodles","lasana","ravioles","tagliatelle","gnocchi",
+        "semola","pan de molde","pan integral"
+    ]
+};
+
+const LABELS = { proteina: "Proteina", vegetal: "Vegetal", carbohidrato: "Carbohidrato", otro: "Otro" };
+
+// Devuelve la categoria del ingrediente segun su nombre
+function clasificarIngrediente(nombre) {
+    const n = nombre.toLowerCase().trim();
+    if (!n) return "otro";
+    for (const [cat, lista] of Object.entries(CATEGORIAS)) {
+        if (lista.some(k => n.includes(k) || k.includes(n))) return cat;
+    }
+    return "otro";
+}
+
+// Actualiza el badge y el campo oculto de la fila al escribir un ingrediente
+function detectarCategoria(inputNombre) {
+    const row    = inputNombre.closest('.dynamic-row');
+    const hidden = row.querySelector('input[name="ingrediente_categoria[]"]');
+    const badge  = row.querySelector('.categoria-badge');
+    const cat    = clasificarIngrediente(inputNombre.value);
+    hidden.value      = cat;
+    badge.className   = `categoria-badge badge-${cat}`;
+    badge.textContent = LABELS[cat];
+}
+
+// Anade una nueva fila de ingrediente al formulario
+function agregarIngrediente() {
+    const contenedor = document.getElementById('contenedor-ingredientes');
+    const div = document.createElement('div');
+    div.className = 'dynamic-row';
+    div.style.cssText = 'align-items:center; gap:8px;';
+    div.innerHTML = `
+        <input class="form-control" type="text" name="ingrediente_nombre[]"
+               placeholder="Nombre" style="flex:2" oninput="detectarCategoria(this)">
+        <input class="form-control" type="text" name="ingrediente_cantidad[]"
+               placeholder="Cantidad" style="flex:1">
+        <input type="hidden" name="ingrediente_categoria[]" value="otro">
+        <span class="categoria-badge badge-otro">Otro</span>
+    `;
+    contenedor.appendChild(div);
+}
+
+// Anade una nueva fila de paso al formulario
+let pasoContador = 1;
+function agregarPaso() {
+    pasoContador++;
+    const contenedor = document.getElementById('contenedor-pasos');
+    const div = document.createElement('div');
+    div.className = 'dynamic-row';
+    div.innerHTML = `
+        <span class="step-num">${pasoContador}.</span>
+        <textarea class="form-control" name="paso_descripcion[]" placeholder="Describe el paso..."></textarea>
+    `;
+    contenedor.appendChild(div);
+}
+</script>
+
+{% endblock %}
