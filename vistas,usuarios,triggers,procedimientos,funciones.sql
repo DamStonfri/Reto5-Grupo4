@@ -189,6 +189,24 @@ BEGIN
 END//
 DELIMITER ;
 
+
+-- Procedimiento: valida y normaliza el título
+DELIMITER //
+
+CREATE PROCEDURE sp_normalizar_titulo(INOUT p_titulo VARCHAR(255))
+BEGIN
+    IF p_titulo IS NULL OR CHAR_LENGTH(TRIM(p_titulo)) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El título de la receta no puede estar vacío.';
+    END IF;
+
+    SET p_titulo = CONCAT(
+        UPPER(LEFT(TRIM(p_titulo), 1)),
+        LOWER(SUBSTRING(TRIM(p_titulo), 2))
+    );
+END//
+
+DELIMITER ;
 -- TRIGGERS  
 -- ==============================================================================================================
 
@@ -212,23 +230,16 @@ DELIMITER ;
 
 -- Trigger 2 CREAR FUNCION 
 --   Mejora el titulo (primera letra mayuscula, sin espacios extra)
+-- llama al procedimiento
 DELIMITER //
+
 CREATE TRIGGER trg_normalizar_receta
 BEFORE INSERT ON recetas
 FOR EACH ROW
 BEGIN
--- TRIM quita espacios y CHAR_LENGHT devuelve el numero de caracteres
-    IF NEW.titulo IS NULL OR CHAR_LENGTH(TRIM(NEW.titulo)) = 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'El título de la receta no puede estar vacío.';
-    END IF;
-    -- Normalizar: trim + primera letra en mayúscula
-    SET NEW.titulo = CONCAT(
-        UPPER(LEFT(TRIM(NEW.titulo), 1)),
-        LOWER(SUBSTRING(TRIM(NEW.titulo), 2))
-	-- substring saca una aprte del texto
-    );
+    CALL sp_normalizar_titulo(NEW.titulo);
 END//
+
 DELIMITER ;
 
 -- Trigger 3 
