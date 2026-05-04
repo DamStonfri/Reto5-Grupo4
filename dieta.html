@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Calculadora de dieta IA{% endblock %}
+
+{% block content %}
+<div class="page-wrapper--narrow">
+
+  <div class="page-header">
+    <h1 class="page-title">Calculadora de dieta</h1>
+  </div>
+
+  <div class="card">
+    <span class="section-label">Tus datos</span>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Edad</label>
+        <input type="number" id="edad" class="form-control" placeholder="28" min="14" max="90">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Sexo</label>
+        <select id="sexo" class="form-control">
+          <option value="">Selecciona...</option>
+          <option value="hombre">Hombre</option>
+          <option value="mujer">Mujer</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Peso (kg)</label>
+        <input type="number" id="peso" class="form-control" placeholder="70" min="30" max="250">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Altura (cm)</label>
+        <input type="number" id="altura" class="form-control" placeholder="170" min="100" max="220">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nivel de actividad física</label>
+      <select id="actividad" class="form-control">
+        <option value="">Selecciona...</option>
+        <option value="sedentario">Sedentario (poco o nada de ejercicio)</option>
+        <option value="ligero">Ligero (1–3 días/semana)</option>
+        <option value="moderado">Moderado (3–5 días/semana)</option>
+        <option value="activo">Activo (6–7 días/semana)</option>
+        <option value="muy activo">Muy activo (2 veces al día)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Objetivo principal</label>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;" id="objetivo-tags">
+        <button type="button" class="diet-tag" data-val="perder peso">Perder peso</button>
+        <button type="button" class="diet-tag" data-val="mantener peso">Mantener peso</button>
+        <button type="button" class="diet-tag" data-val="ganar músculo">Ganar músculo</button>
+        <button type="button" class="diet-tag" data-val="mejorar rendimiento">Rendimiento</button>
+        <button type="button" class="diet-tag" data-val="salud general">Salud general</button>
+      </div>
+    </div>
+
+    <hr class="form-divider">
+    <span class="section-label">Preferencias / restricciones</span>
+
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;" id="restriccion-tags">
+      <button type="button" class="diet-tag" data-val="vegetariano">Vegetariano</button>
+      <button type="button" class="diet-tag" data-val="vegano">Vegano</button>
+      <button type="button" class="diet-tag" data-val="sin gluten">Sin gluten</button>
+      <button type="button" class="diet-tag" data-val="sin lactosa">Sin lactosa</button>
+      <button type="button" class="diet-tag" data-val="keto">Keto</button>
+      <button type="button" class="diet-tag" data-val="mediterráneo">Mediterráneo</button>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="gen-btn" onclick="generarDieta()">
+      Calcular mi plan nutricional
+    </button>
+  </div>
+
+  <!-- Resultado -->
+  <div id="result-area" style="display:none; margin-top:28px;"></div>
+
+</div>
+
+<style>
+  .diet-tag {
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--ink-mid);
+    font-family: 'Lato', sans-serif;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .diet-tag:hover { border-color: var(--terra); color: var(--terra); }
+  .diet-tag.active {
+    background: var(--terra-light);
+    border-color: var(--terra);
+    color: var(--terra-dark);
+    font-weight: 700;
+  }
+
+  .macro-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .macro-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .macro-val { font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+  .macro-lbl { font-size: 0.75rem; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .kcal-highlight {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--terra);
+    font-weight: 700;
+  }
+
+  .meal-block { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .meal-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ink); margin-bottom: 8px; }
+  .meal-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--ink-mid);
+    padding: 3px 0;
+  }
+  .meal-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--terra);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .consejo-box {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--terra-light);
+    border-left: 4px solid var(--terra);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--terra-dark);
+    line-height: 1.6;
+  }
+  .consejo-box strong {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .loading-dots { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 32px; }
+  .loading-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--terra);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+</style>
+
+<script>
+  let objetivo = '';
+  let restricciones = [];
+
+  document.querySelectorAll('#objetivo-tags .diet-tag').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#objetivo-tags .diet-tag').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      objetivo = t.dataset.val;
+    });
+  });
+
+  document.querySelectorAll('#restriccion-tags .diet-tag').forEach(t => {
+    t.addEventListener('click', () => {
+      t.classList.toggle('active');
+      const v = t.dataset.val;
+      restricciones.includes(v) ? restricciones = restricciones.filter(x => x !== v) : restricciones.push(v);
+    });
+  });
+
+  async function generarDieta() {
+    const edad     = document.getElementById('edad').value;
+    const sexo     = document.getElementById('sexo').value;
+    const peso     = document.getElementById('peso').value;
+    const altura   = document.getElementById('altura').value;
+    const actividad = document.getElementById('actividad').value;
+    const area     = document.getElementById('result-area');
+
+    if (!edad || !sexo || !peso || !altura || !actividad || !objetivo) {
+      area.style.display = 'block';
+      area.innerHTML = '<div class="card" style="color:#c0392b; border-left: 4px solid #c0392b;">Por favor rellena todos los campos y selecciona un objetivo.</div>';
+      return;
+    }
+
+    const btn = document.getElementById('gen-btn');
+    btn.disabled = true;
+    btn.textContent = 'Calculando…';
+    area.style.display = 'block';
+    area.innerHTML = '<div class="card"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>';
+
+    try {
+      const res = await fetch('/api/calcular-dieta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ edad, sexo, peso, altura, actividad, objetivo, restricciones })
+      });
+      const plan = await res.json();
+
+      const mealHTML = plan.comidas.map(c => `
+        <div class="meal-block">
+          <div class="meal-title">${c.nombre}</div>
+          ${c.items.map(i => `<div class="meal-item"><div class="meal-dot"></div>${i}</div>`).join('')}
+        </div>`).join('');
+
+      area.innerHTML = `
+        <div class="card">
+          <span class="section-label">Tu plan nutricional</span>
+          <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:4px;">
+            <span class="kcal-highlight">${Math.round(plan.calorias).toLocaleString()}</span>
+            <span style="color:var(--ink-light); font-size:0.9rem;">kcal / día</span>
+          </div>
+          <p style="color:var(--ink-mid); font-size:0.9rem; margin-bottom:16px;">${plan.resumen}</p>
+          <div class="macro-grid">
+            <div class="macro-card"><div class="macro-val">${Math.round(plan.proteinas)}g</div><div class="macro-lbl">Proteínas</div></div>
+            <div class="macro-card"><div class="macro-val">${Math.round(plan.carbohidratos)}g</div><div class="macro-lbl">Carbohidratos</div></div>
+            <div class="macro-card"><div class="macro-val">${Math.round(plan.grasas)}g</div><div class="macro-lbl">Grasas</div></div>
+          </div>
+          ${mealHTML}
+          <div class="consejo-box"><strong>Consejo</strong>${plan.consejo}</div>
+        </div>`;
+    } catch(e) {
+      area.innerHTML = '<div class="card" style="color:#c0392b; border-left:4px solid #c0392b;">Error al generar el plan. Inténtalo de nuevo.</div>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Recalcular mi plan';
+  }
+</script>
+{% endblock %}

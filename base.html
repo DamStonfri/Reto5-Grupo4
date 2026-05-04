@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recetas Flask</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Barra de navegacion principal -->
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="nav-logo">
+    </a>
+
+    <div class="nav-links">
+        <a href="/">Inicio</a>
+        <a href="{{ url_for('nueva_receta') }}">Crear Receta</a>
+        <a href="{{ url_for('recetas') }}">Ver Recetas</a>
+        <a href="{{ url_for('menus') }}">Menus</a>
+        <a href="{{ url_for('dieta') }}">Dieta Personalizada</a>
+        <a href="{{ url_for('videos') }}">Videos</a>
+        <a href="{{ url_for('quienes_somos') }}">Quienes Somos</a>
+        <a href="{{ url_for('contacto') }}">Contacto</a>
+    </div>
+
+    {% if session.get("usuario_id") %}
+        <!-- Menu de usuario autenticado -->
+        <div class="user-menu">
+            <button class="user-logo" onclick="toggleUserMenu()">
+                {{ session.get("usuario_nombre")[0]|upper }}
+            </button>
+            <div class="user-dropdown" id="userDropdown">
+                <p>Hola, <strong>{{ session.get("usuario_nombre") }}</strong></p>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar sesion</a>
+            </div>
+        </div>
+    {% else %}
+        <!-- Botones de acceso para usuarios sin sesion -->
+        <div class="nav-auth">
+            <a href="{{ url_for('login') }}" class="btn-nav-login">Entrar</a>
+            <a href="{{ url_for('registro') }}" class="btn-nav-register">Registro</a>
+        </div>
+    {% endif %}
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>
+    <p>© 2026 Recetas Gastrolab reto_5 · Hecho por Aimar, Alex y Andoni</p>
+</footer>
+
+<script>
+    // Abre o cierra el dropdown del usuario
+    function toggleUserMenu() {
+        const menu = document.getElementById("userDropdown");
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    // Cierra el dropdown al hacer clic fuera de el
+    document.addEventListener("click", function(e) {
+        const menu = document.getElementById("userDropdown");
+        if (menu && !e.target.closest(".user-menu")) {
+            menu.style.display = "none";
+        }
+    });
+</script>
+
+</body>
+</html>
