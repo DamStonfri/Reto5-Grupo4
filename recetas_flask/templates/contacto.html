@@ -1,43 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="card" style="max-width: 700px; margin: 30px auto;">
+<div class="page-wrapper--narrow">
 
-    <h1 style="text-align: center;">Contacto</h1>
-    <p style="text-align: center; color: #666;">
-        ¿Tienes alguna duda o sugerencia? Escríbenos 👇
-    </p>
-    <!--formulario contacto (enlazado con formspree para enviar automaticamente los gmails)-->
-    <form action="https://formspree.io/f/xeevbpgl" method="POST">
+    <div class="contact-intro">
+        <h1>Contacto</h1>
+        <p>Tienes alguna duda o sugerencia? Escribenos.</p>
+    </div>
 
-        <div style="margin-bottom: 15px;">
-            <label>Nombre</label>
-            <input type="text" name="nombre" required
-                    style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label>Email</label>
-            <input type="email" name="email" required
-                    style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label>Mensaje</label>
-            <textarea name="mensaje" rows="5" required
-                        style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;"></textarea>
-        </div>
-
-        <input type="hidden" name="_subject" value="Nuevo mensaje desde la web de recetas">
-
-        <button type="submit"
-                style="width: 100%; padding: 12px; background-color: #111; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
-            Enviar mensaje
-        </button>
-
-    </form>
+    <!-- Formulario conectado a Formspree para envio automatico (a gmail de aimar) -->
+    <div class="card">
+        <form action="https://formspree.io/f/xeevbpgl" method="POST">
+            <div class="form-group">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" type="text" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mensaje</label>
+                <textarea class="form-control" name="mensaje" rows="5" required></textarea>
+            </div>
+            <input type="hidden" name="_subject" value="Nuevo mensaje desde la web de recetas">
+            <button type="submit" class="btn btn-dark btn-full">Enviar mensaje</button>
+        </form>
+    </div>
 
 </div>
 {% endblock %}
-
-<!--https://formspree.io/forms/xeevbpgl/rules-->
