@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-wrapper--narrow">
+
+    <div class="contact-intro">
+        <h1>Contacto</h1>
+        <p>Tienes alguna duda o sugerencia? Escribenos.</p>
+    </div>
+
+    <!-- Formulario conectado a Formspree para envio automatico (a gmail de aimar) -->
+    <div class="card">
+        <form action="https://formspree.io/f/xeevbpgl" method="POST">
+            <div class="form-group">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" type="text" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mensaje</label>
+                <textarea class="form-control" name="mensaje" rows="5" required></textarea>
+            </div>
+            <input type="hidden" name="_subject" value="Nuevo mensaje desde la web de recetas">
+            <button type="submit" class="btn btn-dark btn-full">Enviar mensaje</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

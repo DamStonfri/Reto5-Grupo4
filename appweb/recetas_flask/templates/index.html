@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Seccion de bienvenida -->
+<div class="hero">
+    <p class="hero-eyebrow">Comunidad gastronomica</p>
+    <h1>El Libro de Recetas</h1>
+    <p>Descubre y comparte las mejores recetas creadas por nuestra comunidad</p>
+    <a href="{{ url_for('nueva_receta') }}" class="btn btn-primary">+ Publicar mi receta</a>
+</div>
+
+<!-- Ultimas recetas publicadas -->
+<div class="page-wrapper">
+    <div class="page-header">
+        <h2 class="page-title">Ultimas recetas</h2>
+    </div>
+
+    <div class="recipes-grid">
+        {% for receta in recetas %}
+        <div class="recipe-card">
+            <div class="recipe-card__img">
+                {% if receta.imagen %}
+                    <img src="{{ url_for('static', filename='uploads/' + receta.imagen) }}" alt="{{ receta.titulo }}">
+                {% else %}
+                    <span class="placeholder-icon">🍽️</span>
+                {% endif %}
+            </div>
+            <div class="recipe-card__body">
+                <div class="recipe-card__tag">Receta</div>
+                <h3 class="recipe-card__title">{{ receta.titulo }}</h3>
+                <p class="recipe-card__meta">
+                    por <strong>{{ receta.autor }}</strong>
+                    &nbsp;·&nbsp;
+                    {{ receta.creada_en.strftime('%d/%m/%Y') if receta.creada_en else '' }}
+                </p>
+                <hr class="recipe-card__divider">
+                <p class="recipe-card__desc">
+                    {{ receta.descripcion[:120] }}{% if receta.descripcion|length > 120 %}...{% endif %}
+                </p>
+                <a href="{{ url_for('detalle_receta', id=receta.id) }}" class="recipe-card__link">Leer mas</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Aun no hay recetas publicadas. Se el primero!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
