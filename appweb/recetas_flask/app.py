@@ -28,7 +28,6 @@ def conectar():
         password="1234ai",
         database="recetas_app"
     )
-
 def extension_permitida(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -40,13 +39,11 @@ def guardar_imagen(imagen):
         return None
     if not extension_permitida(imagen.filename):
         return None
-
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     filename = secure_filename(imagen.filename)
     nombre_unico = datetime.now().strftime("%Y%m%d%H%M%S_") + filename
     imagen.save(os.path.join(app.config["UPLOAD_FOLDER"], nombre_unico))
     return nombre_unico
-
 def login_requerido():
     """Redirige al login si el usuario no esta en sesion. Devuelve None si esta autenticado."""
     if "usuario_id" not in session:
@@ -62,7 +59,6 @@ def login():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-
         cnx = conectar()
         cursor = cnx.cursor(dictionary=True)
         cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
@@ -77,7 +73,6 @@ def login():
             return redirect(url_for("index"))
 
         flash("Email o contraseña incorrectos")
-
     return render_template("login.html")
 
 
@@ -87,20 +82,16 @@ def registro():
         nombre        = request.form["nombre"]
         email         = request.form["email"]
         password_hash = generate_password_hash(request.form["password"])
-
         cnx = conectar()
         cursor = cnx.cursor()
         cursor.execute(
             "INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, %s)",
-            (nombre, email, password_hash, "usuario")
-        )
+            (nombre, email, password_hash, "usuario"))
         cnx.commit()
         cursor.close()
         cnx.close()
-
         flash("Usuario creado correctamente. Ahora inicia sesion.", "success")
         return redirect(url_for("login"))
-
     return render_template("registro.html")
 
 
@@ -108,7 +99,6 @@ def registro():
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
 
 #  Paginas estaticas 
     # hecho por aimar, alex y andoni
@@ -133,7 +123,6 @@ def videos():
 def index():
     redir = login_requerido()
     if redir: return redir
-
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
     cursor.execute("""
@@ -146,7 +135,6 @@ def index():
     recetas = cursor.fetchall()
     cursor.close()
     cnx.close()
-
     return render_template("index.html", recetas=recetas)
 
 
@@ -157,11 +145,9 @@ def index():
 def recetas():
     redir = login_requerido()
     if redir: return redir
-
     filtro = request.args.get("categoria", "todas")
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
-
     if filtro == "vegana":
         cursor.execute("""
             SELECT r.id, r.titulo, r.descripcion, r.usuario_id, r.imagen, u.nombre AS autor, r.creada_en
@@ -193,33 +179,26 @@ def recetas():
                 FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
                 ORDER BY r.creada_en DESC
             """)
-
     lista_recetas = cursor.fetchall()
     cursor.close()
     cnx.close()
-
     return render_template("recetas.html", recetas=lista_recetas, filtro_activo=filtro)
-
 
 @app.route("/recetas/nueva", methods=["GET", "POST"])
 def nueva_receta():
     redir = login_requerido()
     if redir: return redir
-
     if request.method == "POST":
         titulo      = request.form["titulo"]
         descripcion = request.form["descripcion"]
         usuario_id  = session["usuario_id"]
         nombre_imagen = guardar_imagen(request.files.get("imagen"))
-
         nombres     = request.form.getlist("ingrediente_nombre[]")
         cantidades  = request.form.getlist("ingrediente_cantidad[]")
         categorias  = request.form.getlist("ingrediente_categoria[]")
         pasos       = request.form.getlist("paso_descripcion[]")
-
         db = conectar()
         cursor = db.cursor()
-
         cursor.execute(
             "INSERT INTO recetas (titulo, descripcion, usuario_id, imagen) VALUES (%s, %s, %s, %s)",
             (titulo, descripcion, usuario_id, nombre_imagen)
@@ -230,9 +209,7 @@ def nueva_receta():
             if nombre:
                 cursor.execute(
                     "INSERT INTO ingredientes (receta_id, nombre, cantidad, categoria) VALUES (%s, %s, %s, %s)",
-                    (receta_id, nombre, cantidad, categoria)
-                )
-
+                    (receta_id, nombre, cantidad, categoria))
         for i, desc in enumerate(pasos):
             if desc:
                 cursor.execute(
@@ -243,10 +220,8 @@ def nueva_receta():
         db.commit()
         cursor.close()
         db.close()
-
         flash("Receta publicada con exito", "success")
         return redirect(url_for("recetas"))
-
     return render_template("crear_receta.html")
 
 # hecho por aimar
@@ -254,20 +229,16 @@ def nueva_receta():
 def detalle_receta(id):
     db = conectar()
     cursor = db.cursor(dictionary=True)
-
     cursor.execute("""
         SELECT r.*, u.nombre AS autor, u.id AS autor_id
         FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
         WHERE r.id = %s
     """, (id,))
     receta = cursor.fetchone()
-
     cursor.execute("SELECT * FROM ingredientes WHERE receta_id = %s", (id,))
     ingredientes = cursor.fetchall()
-
     cursor.execute("SELECT * FROM pasos WHERE receta_id = %s ORDER BY numero_paso", (id,))
     pasos = cursor.fetchall()
-
     cursor.execute("""
         SELECT c.*, u.nombre FROM comentarios c
         JOIN usuarios u ON c.usuario_id = u.id
@@ -281,10 +252,8 @@ def detalle_receta(id):
         pass
     cursor2.execute(
         "SELECT contar_recetas_usuario(%s), contar_comentarios_receta(%s)",
-        (receta["usuario_id"], id)
-    )
+        (receta["usuario_id"], id))
     totales = cursor2.fetchone()
-
     cursor.close()
     cursor2.close()
     db.close()
@@ -305,7 +274,6 @@ def detalle_receta(id):
 def editar_receta(receta_id):
     redir = login_requerido()
     if redir: return redir
-
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recetas WHERE id = %s", (receta_id,))
@@ -332,15 +300,13 @@ def editar_receta(receta_id):
                 "UPDATE recetas SET titulo=%s, descripcion=%s WHERE id=%s",
                 (titulo, descripcion, receta_id)
             )
-
         nombres    = request.form.getlist("ingrediente_nombre[]")
         cantidades = request.form.getlist("ingrediente_cantidad[]")
         categorias = request.form.getlist("ingrediente_categoria[]")
         pasos      = request.form.getlist("paso_descripcion[]")
-
         cursor.execute("DELETE FROM ingredientes WHERE receta_id = %s", (receta_id,))
         cursor.execute("DELETE FROM pasos WHERE receta_id = %s", (receta_id,))
-
+        # ayudado con ia aqui tambien(no nos funcionaba)
         for nombre, cantidad, categoria in zip(nombres, cantidades, categorias):
             if nombre:
                 cursor.execute(
@@ -354,21 +320,17 @@ def editar_receta(receta_id):
                     "INSERT INTO pasos (receta_id, numero_paso, descripcion) VALUES (%s, %s, %s)",
                     (receta_id, i + 1, desc)
                 )
-
         cnx.commit()
         cursor.close()
         cnx.close()
-
         flash("Receta actualizada correctamente.")
         return redirect(url_for("recetas"))
-
     cursor.execute("SELECT * FROM ingredientes WHERE receta_id = %s", (receta_id,))
     ingredientes = cursor.fetchall()
     cursor.execute("SELECT * FROM pasos WHERE receta_id = %s ORDER BY numero_paso", (receta_id,))
     pasos = cursor.fetchall()
     cursor.close()
     cnx.close()
-
     return render_template("editar_receta.html", receta=receta, ingredientes=ingredientes, pasos=pasos)
 
 # hecho por aimar
@@ -377,26 +339,21 @@ def editar_receta(receta_id):
 def eliminar_receta(receta_id):
     redir = login_requerido()
     if redir: return redir
-
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
     cursor.execute("SELECT usuario_id FROM recetas WHERE id = %s", (receta_id,))
     receta = cursor.fetchone()
-
     if not receta or (receta["usuario_id"] != session["usuario_id"] and session.get("usuario_rol") != "admin"):
         flash("No tienes permiso para eliminar esta receta.")
         cursor.close()
         cnx.close()
         return redirect(url_for("recetas"))
-
     cursor.execute("DELETE FROM recetas WHERE id = %s", (receta_id,))
     cnx.commit()
     cursor.close()
     cnx.close()
-
     flash("Receta eliminada correctamente.")
     return redirect(url_for("recetas"))
-
 
 #  Comentarios 
 
@@ -406,7 +363,6 @@ def eliminar_receta(receta_id):
 def añadir_comentario(receta_id):
     redir = login_requerido()
     if redir: return redir
-
     db = conectar()
     cursor = db.cursor()
     cursor.execute(
@@ -416,7 +372,6 @@ def añadir_comentario(receta_id):
     db.commit()
     cursor.close()
     db.close()
-
     return redirect(url_for("detalle_receta", id=receta_id))
 
 # hecho por aimar
@@ -425,7 +380,6 @@ def añadir_comentario(receta_id):
 def eliminar_comentario(comentario_id, receta_id):
     redir = login_requerido()
     if redir: return redir
-
     db = conectar()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT usuario_id FROM comentarios WHERE id = %s", (comentario_id,))
@@ -439,15 +393,12 @@ def eliminar_comentario(comentario_id, receta_id):
         cursor.close()
         db.close()
         return redirect(url_for("detalle_receta", id=receta_id))
-
     cursor.execute("DELETE FROM comentarios WHERE id = %s", (comentario_id,))
     db.commit()
     cursor.close()
     db.close()
-
     flash("Comentario eliminado correctamente.", "success")
     return redirect(url_for("detalle_receta", id=receta_id))
-
 
 #  Menus 
 
@@ -457,7 +408,6 @@ def eliminar_comentario(comentario_id, receta_id):
 def menus():
     redir = login_requerido()
     if redir: return redir
-
     db = conectar()
     cursor = db.cursor(dictionary=True)
     cursor.execute("""
@@ -466,7 +416,6 @@ def menus():
         ORDER BY m.id DESC
     """)
     lista_menus = cursor.fetchall()
-
     for menu in lista_menus:
         cursor.execute("""
             SELECT r.id, r.titulo, r.descripcion, r.imagen, u.nombre AS autor
@@ -476,10 +425,8 @@ def menus():
             WHERE mr.menu_id = %s
         """, (menu["id"],))
         menu["recetas"] = cursor.fetchall()
-
     cursor.close()
     db.close()
-
     return render_template("menus.html", menus=lista_menus)
 
 # hecho por aimar
@@ -488,20 +435,17 @@ def menus():
 def nuevo_menu():
     redir = login_requerido()
     if redir: return redir
-
     if session.get("usuario_rol") != "admin":
         flash("No tienes permiso para crear menus.", "error")
         return redirect(url_for("menus"))
-
     db = conectar()
     cursor = db.cursor(dictionary=True)
-
     if request.method == "POST":
+        
         nombre      = request.form["nombre"]
         dia_semana  = request.form["dia_semana"]
         usuario_id  = session["usuario_id"]
         recetas_ids = request.form.getlist("recetas[]")
-
         cursor.execute(
             "INSERT INTO menus (nombre, dia_semana, usuario_id) VALUES (%s, %s, %s)",
             (nombre, dia_semana, usuario_id)
@@ -513,7 +457,6 @@ def nuevo_menu():
                 "INSERT INTO menu_recetas (menu_id, receta_id) VALUES (%s, %s)",
                 (menu_id, receta_id)
             )
-
         db.commit()
         cursor.close()
         db.close()
@@ -529,7 +472,6 @@ def nuevo_menu():
     recetas = cursor.fetchall()
     cursor.close()
     db.close()
-
     return render_template("nuevo_menu.html", recetas=recetas)
 
 # hecho por aimar
@@ -538,7 +480,7 @@ def nuevo_menu():
 def eliminar_menu(menu_id):
     redir = login_requerido()
     if redir: return redir
-
+        
     if session.get("usuario_rol") != "admin":
         flash("No tienes permiso para eliminar menus.", "error")
         return redirect(url_for("menus"))
@@ -550,7 +492,6 @@ def eliminar_menu(menu_id):
     db.commit()
     cursor.close()
     db.close()
-
     flash("Menu eliminado correctamente.", "success")
     return redirect(url_for("menus"))
 
