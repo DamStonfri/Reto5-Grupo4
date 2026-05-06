@@ -19,6 +19,8 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # conexion bdd etc
 
+# hecho por aimar
+
 def conectar():
     """Devuelve una conexion a la base de datos."""
     return mysql.connector.connect(
@@ -30,7 +32,7 @@ def conectar():
 def extension_permitida(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
+# hecho por aimar
 # guarda la imagen en static
 def guardar_imagen(imagen):
     """Guarda la imagen subida en uploads/ y devuelve el nombre unico del archivo."""
@@ -53,6 +55,7 @@ def login_requerido():
 
 
 #  Autenticacion (login/registro/logout) 
+# hecho por aimar
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -108,6 +111,7 @@ def logout():
 
 
 #  Paginas estaticas 
+    # hecho por aimar, alex y andoni
 
 @app.route("/quienes-somos")
 def quienes_somos():
@@ -123,6 +127,7 @@ def videos():
 
 
 #  Inicio 
+# hecho por aimar
 
 @app.route("/")
 def index():
@@ -146,6 +151,7 @@ def index():
 
 
 #  Recetas (tuvimos algun probema de funcionamiento y nos ayudamos de IA para solucionarlo(abajo digo donde))
+# hecho por aimar
 
 @app.route("/recetas")
 def recetas():
@@ -243,7 +249,7 @@ def nueva_receta():
 
     return render_template("crear_receta.html")
 
-
+# hecho por aimar
 @app.route("/receta/<int:id>")
 def detalle_receta(id):
     db = conectar()
@@ -293,6 +299,7 @@ def detalle_receta(id):
         total_comentarios=totales[1]
     )
 
+# hecho por aimar
 
 @app.route("/recetas/editar/<int:receta_id>", methods=["GET", "POST"])
 def editar_receta(receta_id):
@@ -364,6 +371,7 @@ def editar_receta(receta_id):
 
     return render_template("editar_receta.html", receta=receta, ingredientes=ingredientes, pasos=pasos)
 
+# hecho por aimar
 
 @app.route("/recetas/eliminar/<int:receta_id>", methods=["POST"])
 def eliminar_receta(receta_id):
@@ -392,6 +400,8 @@ def eliminar_receta(receta_id):
 
 #  Comentarios 
 
+# hecho por aimar
+
 @app.route("/comentar/<int:receta_id>", methods=["POST"])
 def añadir_comentario(receta_id):
     redir = login_requerido()
@@ -409,7 +419,8 @@ def añadir_comentario(receta_id):
 
     return redirect(url_for("detalle_receta", id=receta_id))
 
-
+# hecho por aimar
+    
 @app.route("/comentario/eliminar/<int:comentario_id>/<int:receta_id>", methods=["POST"])
 def eliminar_comentario(comentario_id, receta_id):
     redir = login_requerido()
@@ -440,6 +451,8 @@ def eliminar_comentario(comentario_id, receta_id):
 
 #  Menus 
 
+# hecho por aimar
+
 @app.route("/menus")
 def menus():
     redir = login_requerido()
@@ -469,6 +482,7 @@ def menus():
 
     return render_template("menus.html", menus=lista_menus)
 
+# hecho por aimar
 
 @app.route("/menus/nuevo", methods=["GET", "POST"])
 def nuevo_menu():
@@ -518,6 +532,7 @@ def nuevo_menu():
 
     return render_template("nuevo_menu.html", recetas=recetas)
 
+# hecho por aimar
 
 @app.route("/menus/eliminar/<int:menu_id>", methods=["POST"])
 def eliminar_menu(menu_id):
@@ -541,6 +556,8 @@ def eliminar_menu(menu_id):
 
 
 #  Calculadora de dieta IA 
+
+# hecho por alex
 
 @app.route("/dieta")
 def dieta():
@@ -635,6 +652,8 @@ Responde ÚNICAMENTE con JSON válido, sin texto extra ni markdown:
 
 #  Perfil 
 
+# hecho por andoni
+
 @app.route("/perfil")
 def perfil():
     redir = login_requerido()
@@ -653,6 +672,7 @@ def perfil():
 
     return render_template("perfil.html", recetas=mis_recetas)
 
+ # hecho por andoni
 
 @app.route("/perfil/editar", methods=["GET", "POST"])
 def editar_perfil():
