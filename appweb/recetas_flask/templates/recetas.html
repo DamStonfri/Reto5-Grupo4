@@ -1,3 +1,4 @@
+<!-- parte aimar -->
 {% extends 'base.html' %}
 
 {% block content %}
@@ -14,6 +15,7 @@
                 <option value="vegana"  {% if filtro_activo == 'vegana' %}selected{% endif %}>Recetas veganas</option>
                 <option value="fitness" {% if filtro_activo == 'fitness' %}selected{% endif %}>Recetas fitness</option>
             </select>
+            <!-- parte andoni(boton buscar) -->
             <button type="submit" class="btn btn-dark">Buscar</button>
         </form>
     </div>
