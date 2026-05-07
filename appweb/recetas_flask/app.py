@@ -28,6 +28,7 @@ def conectar():
         password="1234ai",
         database="recetas_app"
     )
+
 def extension_permitida(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -40,15 +41,32 @@ def guardar_imagen(imagen):
     if not extension_permitida(imagen.filename):
         return None
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    filename = secure_filename(imagen.filename)
-    nombre_unico = datetime.now().strftime("%Y%m%d%H%M%S_") + filename
+    nombre_unico = datetime.now().strftime("%Y%m%d%H%M%S_") + secure_filename(imagen.filename)
     imagen.save(os.path.join(app.config["UPLOAD_FOLDER"], nombre_unico))
     return nombre_unico
+
 def login_requerido():
     """Redirige al login si el usuario no esta en sesion. Devuelve None si esta autenticado."""
     if "usuario_id" not in session:
         return redirect(url_for("login"))
     return None
+
+def insertar_ingredientes_y_pasos(cursor, receta_id):
+    """Inserta ingredientes y pasos desde el formulario para una receta dada."""
+    for nombre, cantidad, categoria in zip(
+        request.form.getlist("ingrediente_nombre[]"),
+        request.form.getlist("ingrediente_cantidad[]"),
+        request.form.getlist("ingrediente_categoria[]")
+    ):
+        if nombre:
+            cursor.execute(
+                "INSERT INTO ingredientes (receta_id, nombre, cantidad, categoria) VALUES (%s, %s, %s, %s)",
+                (receta_id, nombre, cantidad, categoria))
+    for i, desc in enumerate(request.form.getlist("paso_descripcion[]")):
+        if desc:
+            cursor.execute(
+                "INSERT INTO pasos (receta_id, numero_paso, descripcion) VALUES (%s, %s, %s)",
+                (receta_id, i + 1, desc))
 
 
 #  Autenticacion (login/registro/logout) 
@@ -57,21 +75,17 @@ def login_requerido():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
         cnx = conectar()
         cursor = cnx.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (request.form["email"],))
         usuario = cursor.fetchone()
         cursor.close()
         cnx.close()
-
-        if usuario and check_password_hash(usuario["password_hash"], password):
+        if usuario and check_password_hash(usuario["password_hash"], request.form["password"]):
             session["usuario_id"]     = usuario["id"]
             session["usuario_nombre"] = usuario["nombre"]
             session["usuario_rol"]    = usuario["rol"]
             return redirect(url_for("index"))
-
         flash("Email o contraseña incorrectos")
     return render_template("login.html")
 
@@ -79,14 +93,12 @@ def login():
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
-        nombre        = request.form["nombre"]
-        email         = request.form["email"]
-        password_hash = generate_password_hash(request.form["password"])
         cnx = conectar()
         cursor = cnx.cursor()
         cursor.execute(
             "INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, %s)",
-            (nombre, email, password_hash, "usuario"))
+            (request.form["nombre"], request.form["email"],
+             generate_password_hash(request.form["password"]), "usuario"))
         cnx.commit()
         cursor.close()
         cnx.close()
@@ -146,6 +158,7 @@ def recetas():
     redir = login_requerido()
     if redir: return redir
     filtro = request.args.get("categoria", "todas")
+    buscar = request.args.get("buscar", "")
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
     if filtro == "vegana":
@@ -164,58 +177,39 @@ def recetas():
                 AND r.id IN (SELECT receta_id FROM ingredientes WHERE categoria = 'vegetal')
             ORDER BY r.creada_en DESC
         """)
+    elif buscar:
+        cursor.execute("""
+            SELECT r.id, r.titulo, r.descripcion, r.usuario_id, r.imagen, u.nombre AS autor
+            FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
+            WHERE r.titulo LIKE %s
+            ORDER BY r.creada_en DESC
+        """, (f"%{buscar}%",))
     else:
-        buscar = request.args.get("buscar", "")
-        if buscar:
-            cursor.execute("""
-                SELECT r.id, r.titulo, r.descripcion, r.usuario_id, r.imagen, u.nombre AS autor
-                FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
-                WHERE r.titulo LIKE %s
-                ORDER BY r.creada_en DESC
-            """, (f"%{buscar}%",))
-        else:
-            cursor.execute("""
-                SELECT r.id, r.titulo, r.descripcion, r.usuario_id, r.imagen, u.nombre AS autor
-                FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
-                ORDER BY r.creada_en DESC
-            """)
+        cursor.execute("""
+            SELECT r.id, r.titulo, r.descripcion, r.usuario_id, r.imagen, u.nombre AS autor
+            FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
+            ORDER BY r.creada_en DESC
+        """)
     lista_recetas = cursor.fetchall()
     cursor.close()
     cnx.close()
     return render_template("recetas.html", recetas=lista_recetas, filtro_activo=filtro)
+
 
 @app.route("/recetas/nueva", methods=["GET", "POST"])
 def nueva_receta():
     redir = login_requerido()
     if redir: return redir
     if request.method == "POST":
-        titulo      = request.form["titulo"]
-        descripcion = request.form["descripcion"]
-        usuario_id  = session["usuario_id"]
-        nombre_imagen = guardar_imagen(request.files.get("imagen"))
-        nombres     = request.form.getlist("ingrediente_nombre[]")
-        cantidades  = request.form.getlist("ingrediente_cantidad[]")
-        categorias  = request.form.getlist("ingrediente_categoria[]")
-        pasos       = request.form.getlist("paso_descripcion[]")
         db = conectar()
         cursor = db.cursor()
         cursor.execute(
             "INSERT INTO recetas (titulo, descripcion, usuario_id, imagen) VALUES (%s, %s, %s, %s)",
-            (titulo, descripcion, usuario_id, nombre_imagen)
-        )
+            (request.form["titulo"], request.form["descripcion"],
+             session["usuario_id"], guardar_imagen(request.files.get("imagen"))))
         receta_id = cursor.lastrowid
 # aqui se ayudo de ia ya que no conseguiamos su funcionamiento
-        for nombre, cantidad, categoria in zip(nombres, cantidades, categorias):
-            if nombre:
-                cursor.execute(
-                    "INSERT INTO ingredientes (receta_id, nombre, cantidad, categoria) VALUES (%s, %s, %s, %s)",
-                    (receta_id, nombre, cantidad, categoria))
-        for i, desc in enumerate(pasos):
-            if desc:
-                cursor.execute(
-                    "INSERT INTO pasos (receta_id, numero_paso, descripcion) VALUES (%s, %s, %s)",
-                    (receta_id, i + 1, desc)
-                )
+        insertar_ingredientes_y_pasos(cursor, receta_id)
 # fin ayuda
         db.commit()
         cursor.close()
@@ -260,12 +254,9 @@ def detalle_receta(id):
 # fin ayuda ia
     return render_template(
         "detalle_receta.html",
-        receta=receta,
-        ingredientes=ingredientes,
-        pasos=pasos,
+        receta=receta, ingredientes=ingredientes, pasos=pasos,
         comentarios=comentarios,
-        total_recetas_autor=totales[0],
-        total_comentarios=totales[1]
+        total_recetas_autor=totales[0], total_comentarios=totales[1]
     )
 
 # hecho por aimar
@@ -278,48 +269,24 @@ def editar_receta(receta_id):
     cursor = cnx.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recetas WHERE id = %s", (receta_id,))
     receta = cursor.fetchone()
-
     if not receta or (receta["usuario_id"] != session["usuario_id"] and session.get("usuario_rol") != "admin"):
         flash("No tienes permiso para editar esta receta.")
         cursor.close()
         cnx.close()
         return redirect(url_for("recetas"))
-
     if request.method == "POST":
-        titulo        = request.form["titulo"]
-        descripcion   = request.form["descripcion"]
         nombre_imagen = guardar_imagen(request.files.get("imagen"))
-
+        campos = ["titulo=%s", "descripcion=%s"]
+        valores = [request.form["titulo"], request.form["descripcion"]]
         if nombre_imagen:
-            cursor.execute(
-                "UPDATE recetas SET titulo=%s, descripcion=%s, imagen=%s WHERE id=%s",
-                (titulo, descripcion, nombre_imagen, receta_id)
-            )
-        else:
-            cursor.execute(
-                "UPDATE recetas SET titulo=%s, descripcion=%s WHERE id=%s",
-                (titulo, descripcion, receta_id)
-            )
-        nombres    = request.form.getlist("ingrediente_nombre[]")
-        cantidades = request.form.getlist("ingrediente_cantidad[]")
-        categorias = request.form.getlist("ingrediente_categoria[]")
-        pasos      = request.form.getlist("paso_descripcion[]")
+            campos.append("imagen=%s")
+            valores.append(nombre_imagen)
+        valores.append(receta_id)
+        cursor.execute(f"UPDATE recetas SET {', '.join(campos)} WHERE id=%s", valores)
         cursor.execute("DELETE FROM ingredientes WHERE receta_id = %s", (receta_id,))
         cursor.execute("DELETE FROM pasos WHERE receta_id = %s", (receta_id,))
         # ayudado con ia aqui tambien(no nos funcionaba)
-        for nombre, cantidad, categoria in zip(nombres, cantidades, categorias):
-            if nombre:
-                cursor.execute(
-                    "INSERT INTO ingredientes (receta_id, nombre, cantidad, categoria) VALUES (%s, %s, %s, %s)",
-                    (receta_id, nombre, cantidad, categoria)
-                )
-
-        for i, desc in enumerate(pasos):
-            if desc:
-                cursor.execute(
-                    "INSERT INTO pasos (receta_id, numero_paso, descripcion) VALUES (%s, %s, %s)",
-                    (receta_id, i + 1, desc)
-                )
+        insertar_ingredientes_y_pasos(cursor, receta_id)
         cnx.commit()
         cursor.close()
         cnx.close()
@@ -367,15 +334,14 @@ def añadir_comentario(receta_id):
     cursor = db.cursor()
     cursor.execute(
         "INSERT INTO comentarios (receta_id, usuario_id, contenido) VALUES (%s, %s, %s)",
-        (receta_id, session["usuario_id"], request.form["contenido"])
-    )
+        (receta_id, session["usuario_id"], request.form["contenido"]))
     db.commit()
     cursor.close()
     db.close()
     return redirect(url_for("detalle_receta", id=receta_id))
 
 # hecho por aimar
-    
+
 @app.route("/comentario/eliminar/<int:comentario_id>/<int:receta_id>", methods=["POST"])
 def eliminar_comentario(comentario_id, receta_id):
     redir = login_requerido()
@@ -384,7 +350,6 @@ def eliminar_comentario(comentario_id, receta_id):
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT usuario_id FROM comentarios WHERE id = %s", (comentario_id,))
     comentario = cursor.fetchone()
-
     if not comentario or (
         comentario["usuario_id"] != session["usuario_id"]
         and session.get("usuario_rol") != "admin"
@@ -441,29 +406,19 @@ def nuevo_menu():
     db = conectar()
     cursor = db.cursor(dictionary=True)
     if request.method == "POST":
-        
-        nombre      = request.form["nombre"]
-        dia_semana  = request.form["dia_semana"]
-        usuario_id  = session["usuario_id"]
-        recetas_ids = request.form.getlist("recetas[]")
         cursor.execute(
             "INSERT INTO menus (nombre, dia_semana, usuario_id) VALUES (%s, %s, %s)",
-            (nombre, dia_semana, usuario_id)
-        )
+            (request.form["nombre"], request.form["dia_semana"], session["usuario_id"]))
         menu_id = cursor.lastrowid
-
-        for receta_id in recetas_ids:
+        for receta_id in request.form.getlist("recetas[]"):
             cursor.execute(
                 "INSERT INTO menu_recetas (menu_id, receta_id) VALUES (%s, %s)",
-                (menu_id, receta_id)
-            )
+                (menu_id, receta_id))
         db.commit()
         cursor.close()
         db.close()
-
         flash("Menu creado correctamente.", "success")
         return redirect(url_for("menus"))
-
     cursor.execute("""
         SELECT r.id, r.titulo, r.imagen, u.nombre AS autor
         FROM recetas r JOIN usuarios u ON r.usuario_id = u.id
@@ -480,11 +435,9 @@ def nuevo_menu():
 def eliminar_menu(menu_id):
     redir = login_requerido()
     if redir: return redir
-        
     if session.get("usuario_rol") != "admin":
         flash("No tienes permiso para eliminar menus.", "error")
         return redirect(url_for("menus"))
-
     db = conectar()
     cursor = db.cursor()
     cursor.execute("DELETE FROM menu_recetas WHERE menu_id = %s", (menu_id,))
@@ -513,19 +466,13 @@ def calcular_dieta():
     if redir: return ("No autorizado", 401)
 
     datos = request.get_json()
-    edad          = datos.get("edad")
-    sexo          = datos.get("sexo")
-    peso          = datos.get("peso")
-    altura        = datos.get("altura")
-    actividad     = datos.get("actividad")
-    objetivo      = datos.get("objetivo")
     restricciones = datos.get("restricciones", [])
     restricciones_texto = ", ".join(restricciones) if restricciones else "ninguna"
 
     mensaje = f"""Genera un plan nutricional personalizado para:
-- Edad: {edad} años, Sexo: {sexo}
-- Peso: {peso} kg, Altura: {altura} cm
-- Actividad: {actividad}, Objetivo: {objetivo}
+- Edad: {datos.get('edad')} años, Sexo: {datos.get('sexo')}
+- Peso: {datos.get('peso')} kg, Altura: {datos.get('altura')} cm
+- Actividad: {datos.get('actividad')}, Objetivo: {datos.get('objetivo')}
 - Restricciones: {restricciones_texto}
 
 Responde ÚNICAMENTE con JSON válido, sin texto extra ni markdown:
@@ -548,18 +495,11 @@ Responde ÚNICAMENTE con JSON válido, sin texto extra ni markdown:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {os.environ.get('HF_TOKEN', '')}"
     }
-
     payload = {
         "model": "Qwen/Qwen2.5-72B-Instruct",
         "messages": [
-            {
-                "role": "system",
-                "content": "Eres un nutricionista experto. Responde solo con JSON válido, sin texto extra ni markdown."
-            },
-            {
-                "role": "user",
-                "content": mensaje
-            }
+            {"role": "system", "content": "Eres un nutricionista experto. Responde solo con JSON válido, sin texto extra ni markdown."},
+            {"role": "user",   "content": mensaje}
         ],
         "max_tokens": 800,
         "temperature": 0.3
@@ -568,24 +508,17 @@ Responde ÚNICAMENTE con JSON válido, sin texto extra ni markdown:
     try:
         response = requests.post(
             "https://router.huggingface.co/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=60
+            headers=headers, json=payload, timeout=60
         )
         response.raise_for_status()
-        resultado = response.json()
-
-        texto = resultado["choices"][0]["message"]["content"]
+        texto = response.json()["choices"][0]["message"]["content"]
         texto = texto.replace("```json", "").replace("```", "").strip()
-
         inicio = texto.find("{")
         fin    = texto.rfind("}") + 1
         if inicio == -1 or fin == 0:
             raise ValueError("No se encontró JSON en la respuesta")
-
         plan = json.loads(texto[inicio:fin])
         return json.dumps(plan), 200, {"Content-Type": "application/json"}
-
     except Exception as e:
         print(f"Error HuggingFace: {e}")
         return json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"}
@@ -599,7 +532,6 @@ Responde ÚNICAMENTE con JSON válido, sin texto extra ni markdown:
 def perfil():
     redir = login_requerido()
     if redir: return redir
-
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
     cursor.execute("""
@@ -610,7 +542,6 @@ def perfil():
     mis_recetas = cursor.fetchall()
     cursor.close()
     cnx.close()
-
     return render_template("perfil.html", recetas=mis_recetas)
 
  # hecho por andoni
@@ -619,32 +550,23 @@ def perfil():
 def editar_perfil():
     redir = login_requerido()
     if redir: return redir
-
     cnx = conectar()
     cursor = cnx.cursor(dictionary=True)
-
     if request.method == "POST":
-        nombre = request.form["nombre"]
-        email  = request.form["email"]
         cursor.execute(
             "UPDATE usuarios SET nombre=%s, email=%s WHERE id=%s",
-            (nombre, email, session["usuario_id"])
-        )
+            (request.form["nombre"], request.form["email"], session["usuario_id"]))
         cnx.commit()
-        session["usuario_nombre"] = nombre
+        session["usuario_nombre"] = request.form["nombre"]
         flash("Perfil actualizado correctamente.", "success")
         cursor.close()
         cnx.close()
         return redirect(url_for("perfil"))
-
     cursor.execute("SELECT * FROM usuarios WHERE id = %s", (session["usuario_id"],))
     usuario = cursor.fetchone()
     cursor.close()
     cnx.close()
-
     return render_template("editar_perfil.html", usuario=usuario)
-
-
 
 
 if __name__ == "__main__":
