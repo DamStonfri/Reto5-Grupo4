@@ -286,7 +286,6 @@ def editar_receta(receta_id):
         cursor.execute(f"UPDATE recetas SET {', '.join(campos)} WHERE id=%s", valores)
         cursor.execute("DELETE FROM ingredientes WHERE receta_id = %s", (receta_id,))
         cursor.execute("DELETE FROM pasos WHERE receta_id = %s", (receta_id,))
-        # ayudado con ia aqui tambien(no nos funcionaba)
         insertar_ingredientes_y_pasos(cursor, receta_id)
         cnx.commit()
         cursor.close()
