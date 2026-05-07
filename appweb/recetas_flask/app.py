@@ -50,13 +50,14 @@ def login_requerido():
     if "usuario_id" not in session:
         return redirect(url_for("login"))
     return None
-
+# aqui se ayudo de ia ya que no conseguiamos su funcionamiento
 def insertar_ingredientes_y_pasos(cursor, receta_id):
     """Inserta ingredientes y pasos desde el formulario para una receta dada."""
     for nombre, cantidad, categoria in zip(
         request.form.getlist("ingrediente_nombre[]"),
         request.form.getlist("ingrediente_cantidad[]"),
         request.form.getlist("ingrediente_categoria[]")
+    # fin ayuda
     ):
         if nombre:
             cursor.execute(
